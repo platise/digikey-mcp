@@ -4,6 +4,7 @@ import logging
 from urllib.parse import urlencode, quote
 from dotenv import load_dotenv
 import requests
+import argparse
 
 from mcp_app import mcp  # shared FastMCP instance (avoids __main__ double-import)
 import digikey_noauth_tools  # noqa: E402, F401 — registers no-auth tools on mcp
@@ -286,7 +287,26 @@ def get_order_status(sales_order_id: int) -> dict:
 
 
 def main():
-    mcp.run()
+    parser = argparse.ArgumentParser(description="DigiKey MCP Server")
+    parser.add_argument("--host", help="Host to bind (enables HTTP mode)")
+    parser.add_argument("--port", type=int, help="Port to bind (enables HTTP mode)")
+    parser.add_argument(
+        "--transport",
+        default="streamable-http",
+        choices=["streamable-http", "sse"],
+        help="HTTP transport when --host/--port is given (default: streamable-http)",
+    )
+    args = parser.parse_args()
+
+    if args.host or args.port:
+        mcp.run(
+            transport=args.transport,
+            host=args.host or "127.0.0.1",
+            port=args.port or 8003,
+        )
+    else:
+        mcp.run()  # stdio (default)
+
 
 if __name__ == "__main__":
-    main() 
+    main()
